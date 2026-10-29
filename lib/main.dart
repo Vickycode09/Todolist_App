@@ -30,8 +30,6 @@ class TodoPage extends StatefulWidget {
 }
 
 class _TodoPageState extends State<TodoPage> {
-  final _taskController = TextEditingController();
-  final _tasks = <String>['tarea5', 'tarea1', 'tarea4', 'tarea2', 'tarea3'];
   int? _revealedTaskIndex;
   double _dragOffset = 0;
   double _slideOffset = 0;
@@ -39,54 +37,9 @@ class _TodoPageState extends State<TodoPage> {
   static const _actionsWidth = 136.0;
 
   @override
-  void dispose() {
-    _taskController.dispose();
-    super.dispose();
-  }
-
-  void _addTask() {
-    final task = _taskController.text.trim();
-    if (task.isEmpty) return;
-
-    setState(() {
-      _tasks.add(task);
-      _taskController.clear();
-    });
-  }
-
-  Future<void> _editTask(int index) async {
-    var editedValue = _tasks[index];
-    final editedTask = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Editar tarea'),
-        content: TextFormField(
-          autofocus: true,
-          initialValue: editedValue,
-          decoration: const InputDecoration(labelText: 'Tarea'),
-          onChanged: (value) => editedValue = value,
-          onFieldSubmitted: (value) => Navigator.pop(context, value.trim()),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, editedValue.trim()),
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
-    );
-
-    if (editedTask != null && editedTask.isNotEmpty && mounted) {
-      setState(() => _tasks[index] = editedTask);
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
+    const tasks = ['tarea5', 'tarea1', 'tarea4', 'tarea2', 'tarea3'];
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('To Do List'),
@@ -103,13 +56,12 @@ class _TodoPageState extends State<TodoPage> {
               children: [
                 Expanded(
                   child: TextField(
-                    controller: _taskController,
+                    readOnly: true,
                     decoration: const InputDecoration(
                       hintText: 'Ingresa una tarea...',
                       border: InputBorder.none,
                       isDense: true,
                     ),
-                    onSubmitted: (_) => _addTask(),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -117,11 +69,17 @@ class _TodoPageState extends State<TodoPage> {
                   height: 36,
                   width: 40,
                   child: IconButton.filled(
-                    onPressed: _addTask,
+                    onPressed: null,
                     tooltip: 'Agregar tarea',
                     icon: const Icon(Icons.add, size: 20),
                     padding: EdgeInsets.zero,
                     style: IconButton.styleFrom(
+                      disabledBackgroundColor: Theme.of(context)
+                          .colorScheme
+                          .primary,
+                      disabledForegroundColor: Theme.of(context)
+                          .colorScheme
+                          .onPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(5),
                       ),
@@ -135,9 +93,8 @@ class _TodoPageState extends State<TodoPage> {
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _tasks.length,
+              itemCount: tasks.length,
               itemBuilder: (context, index) {
-                final task = _tasks[index];
                 final isRevealed = _revealedTaskIndex == index;
                 final offset = isRevealed ? _slideOffset : 0.0;
 
@@ -155,19 +112,11 @@ class _TodoPageState extends State<TodoPage> {
                                     color: Colors.blue,
                                     icon: Icons.edit,
                                     label: 'Editar tarea',
-                                    onPressed: () => _editTask(index),
                                   ),
                                   _taskActionButton(
                                     color: Colors.red,
                                     icon: Icons.delete,
                                     label: 'Borrar tarea',
-                                    onPressed: () {
-                                      setState(() {
-                                        _tasks.removeAt(index);
-                                        _revealedTaskIndex = null;
-                                        _slideOffset = 0;
-                                      });
-                                    },
                                   ),
                                 ],
                               )
@@ -189,7 +138,8 @@ class _TodoPageState extends State<TodoPage> {
                           onHorizontalDragUpdate: (details) {
                             setState(() {
                               _dragOffset = (_dragOffset + details.delta.dx)
-                                  .clamp(-_actionsWidth, 0.0);
+                                  .clamp(-_actionsWidth, 0.0)
+                                  .toDouble();
                               _slideOffset = _dragOffset;
                               _revealedTaskIndex = _dragOffset < -24
                                   ? index
@@ -220,7 +170,7 @@ class _TodoPageState extends State<TodoPage> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          task,
+                                          tasks[index],
                                           style: const TextStyle(fontSize: 14),
                                         ),
                                       ),
@@ -253,14 +203,13 @@ class _TodoPageState extends State<TodoPage> {
     required Color color,
     required IconData icon,
     required String label,
-    required VoidCallback onPressed,
   }) {
     return SizedBox(
       width: _actionsWidth / 2,
       child: ColoredBox(
         color: color,
         child: IconButton(
-          onPressed: onPressed,
+          onPressed: () {},
           tooltip: label,
           icon: Icon(icon, color: Colors.white),
         ),
